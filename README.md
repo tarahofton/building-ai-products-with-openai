@@ -12,3 +12,6 @@ Running frontend locally (deploy = push to github)
 
 Testing local function
 ```python podcast_backend.py get_podcast_summary "hello"```
+
+Colab notebook
+https://colab.research.google.com/drive/16nmbXW_5RaRZYP4GTpfE_e21rx8rh4YK#scrollTo=pUnIxoJUXHbE

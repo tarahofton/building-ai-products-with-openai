@@ -100,19 +100,77 @@ def get_podcast_summary(podcast_transcript):
 @stub.function(image=corise_image, secret=modal.Secret.from_name("my-openai-secret"))
 def get_podcast_guest(podcast_transcript):
   import openai
+  import tiktoken
   import wikipedia
   import json
-  ## ADD YOUR LOGIC HERE TO RETURN THE PODCAST GUEST INFORMATION
+  
+  request = podcast_transcript[:5000]
+  enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+  print ("Number of tokens in input prompt ", len(enc.encode(request)))
+
+  completion = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": request}],
+    functions=[
+    {
+        "name": "get_podcast_guest_information",
+        "description": "In this podcast, return the name of the guest being interviewed.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "guest_name": {
+                    "type": "string",
+                    "description": "Name of the podcast guest",
+                },
+                "unit": {"type": "string"},
+            },
+            "required": ["guest_name"],
+        },
+    }
+    ],
+    function_call={"name": "get_podcast_guest_information"}
+    )
+
+
+  podcast_guest = ""
+  response_message = completion["choices"][0]["message"]
+  if response_message.get("function_call"):
+    function_name = response_message["function_call"]["name"]
+    function_args = json.loads(response_message["function_call"]["arguments"])
+    podcast_guest=function_args.get("guest_name")
+
+  print ("Podcast Guest is ", podcast_guest)
+  podcast_guest_info = ""
+  try:
+    input = wikipedia.page(podcast_guest, auto_suggest=True)
+    podcast_guest_info = input.summary
+  except:
+    podcast_guest_info = "No information available"
+  
   guest = {}
-  guest["name"] = "guest name coming soon"
-  guest["summary"] = "guest summary coming soon"
+  guest["name"] = podcast_guest
+  guest["summary"] = podcast_guest_info
   return guest
 
 @stub.function(image=corise_image, secret=modal.Secret.from_name("my-openai-secret"))
 def get_podcast_highlights(podcast_transcript):
   import openai
-  ### ADD YOUR LOGIC HERE TO RETURN THE HIGHLIGHTS OF THE PODCAST
-  podcastHighlights = "podcastHighlights coming soon"
+  instructPrompt = """
+  Please extract some key moments in the provided podcast transcription.
+  These are typically interesting insights from the guest or critical questions that the host might have put forward.
+  It could also be a discussion on a hot topic or controversial opinion.
+  Format the key moments as short bullet points.
+  """
+
+  request = instructPrompt + podcast_transcript
+  chatOutput = openai.ChatCompletion.create(model="gpt-3.5-turbo-16k",
+                                            messages=[{"role": "system", "content": "You are a helpful assistant."},
+                                                      {"role": "user", "content": request}
+                                                      ]
+                                            )
+  podcastHighlights = chatOutput.choices[0].message.content
+  print(podcastHighlights)
+
   return podcastHighlights
 
 @stub.function(image=corise_image, secret=modal.Secret.from_name("my-openai-secret"), timeout=1200)
