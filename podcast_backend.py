@@ -1,4 +1,5 @@
 import modal
+import sys
 
 def download_whisper():
   # Load the Whisper model
@@ -78,8 +79,22 @@ def get_transcribe_podcast(rss_url, local_path):
 @stub.function(image=corise_image, secret=modal.Secret.from_name("my-openai-secret"))
 def get_podcast_summary(podcast_transcript):
   import openai
-  ## ADD YOUR LOGIC HERE TO RETURN THE SUMMARY OF THE PODCAST USING OPENAI
-  podcastSummary = "Summary coming soon"
+  import tiktoken
+
+  enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+  print ("Number of tokens in input prompt ", len(enc.encode(podcast_transcript)))
+
+  instructPrompt = """
+  Please summerise this podcast, and please exclude any commercials from the summary.
+  """
+
+  request = instructPrompt + podcast_transcript
+  chatOutput = openai.ChatCompletion.create(model="gpt-3.5-turbo-16k",
+                                            messages=[{"role": "system", "content": "You are a helpful assistant."},
+                                                      {"role": "user", "content": request}
+                                                      ]
+                                            )
+  podcastSummary = chatOutput.choices[0].message.content
   return podcastSummary
 
 @stub.function(image=corise_image, secret=modal.Secret.from_name("my-openai-secret"))
@@ -134,3 +149,5 @@ def test_method(url, path):
   output['podcast_highlights'] = podcast_highlights
   print(f"output: {output}")
 
+if __name__ == '__main__':
+    globals()[sys.argv[1]](sys.argv[2])

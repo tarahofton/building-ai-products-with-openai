@@ -9,3 +9,6 @@ Running and deploying backend
 Running frontend locally (deploy = push to github)
 
 ```streamlit run podcast_frontend.py```
+
+Testing local function
+```python podcast_backend.py get_podcast_summary "hello"```
