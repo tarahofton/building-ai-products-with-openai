@@ -89,10 +89,9 @@ def get_podcast_guest(podcast_transcript):
   import json
   ## ADD YOUR LOGIC HERE TO RETURN THE PODCAST GUEST INFORMATION
   guest = {}
-  guest['name'] = 'guest name coming soon'
-  guest['summary'] = 'guest summary coming soon'
-  podcastGuest = json.dumps(guest)
-  return podcastGuest
+  guest["name"] = "guest name coming soon"
+  guest["summary"] = "guest summary coming soon"
+  return guest
 
 @stub.function(image=corise_image, secret=modal.Secret.from_name("my-openai-secret"))
 def get_podcast_highlights(podcast_transcript):
@@ -112,12 +111,26 @@ def process_podcast(url, path):
   output['podcast_summary'] = podcast_summary
   output['podcast_guest'] = podcast_guest
   output['podcast_highlights'] = podcast_highlights
+  print(f"output: {output}")
   return output
 
 @stub.local_entrypoint()
 def test_method(url, path):
   output = {}
+
   podcast_details = get_transcribe_podcast.remote(url, path)
-  print ("Podcast Summary: ", get_podcast_summary.remote(podcast_details['episode_transcript']))
-  print ("Podcast Guest Information: ", get_podcast_guest.remote(podcast_details['episode_transcript']))
-  print ("Podcast Highlights: ", get_podcast_highlights.remote(podcast_details['episode_transcript']))
+  podcast_summary = get_podcast_summary.remote(podcast_details['episode_transcript'])
+  podcast_guest = get_podcast_guest.remote(podcast_details['episode_transcript'])
+  podcast_highlights = get_podcast_highlights.remote(podcast_details['episode_transcript'])
+
+  print ("Podcast Details: ", podcast_details)
+  print ("Podcast Summary: ", podcast_summary)
+  print ("Podcast Guest Information: ", podcast_guest)
+  print ("Podcast Highlights: ", podcast_highlights)
+
+  output['podcast_details'] = podcast_details
+  output['podcast_summary'] = podcast_summary
+  output['podcast_guest'] = podcast_guest
+  output['podcast_highlights'] = podcast_highlights
+  print(f"output: {output}")
+
